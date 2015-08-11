@@ -1,0 +1,25 @@
+﻿{
+  "version": "1.0.0-alpha1",
+  "description": "An app to kill node process spawn by Visual Studio (devenv).",
+  "authors": [ "Giovanni Bassi" ],
+  "tags": [ "" ],
+  "projectUrl": "https://github.com/giggio/killvsnode",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/giggio/killvsnode"
+  },
+  "licenseUrl": "https://raw.githubusercontent.com/giggio/killvsnode/master/LICENSE.txt",
+  "dependencies": {
+  },
+  "commands": {
+    "killvsnode": "KillVSNode"
+  },
+  "frameworks": {
+    "dnx451": {
+      "frameworkAssemblies": { "System.Management": "4.0.0.0" }
+    }
+  },
+  "compilationOptions": {
+    "warningsAsErrors": true
+  }
+}
