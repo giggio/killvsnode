@@ -12,8 +12,8 @@ namespace KillVSNode
         {
             TreatControlCAsInput = false;
             CancelKeyPress += (s, a) => stopped = true;
-            var verbose = args.Contains("--verbose") || args.Contains("-v");
-            var superVerbose = args.Contains("-vv");
+            verbose = args.Contains("--verbose") || args.Contains("-v");
+            superVerbose = args.Contains("-vv");
             if (superVerbose) verbose = true;
 
             if (verbose) WriteLine("Started watching node process under Visual Studio (devenv)");
@@ -23,13 +23,25 @@ namespace KillVSNode
                 foreach (var nodeProcess in nodeProcesses)
                 {
                     if (superVerbose) WriteLine($"Found process id {nodeProcess.Id}");
-                    if (IsChildOfDevenv(nodeProcess, superVerbose))
+                    if (IsChildOfDevenv(nodeProcess))
                     {
                         if (superVerbose) WriteLine($"Found node process id {nodeProcess.Id} which is a child of devenv that is going to die");
-                        nodeProcess.Kill();
-                        if (verbose)
-                            WriteLine($"Killed node process id {nodeProcess.Id}");
-                    } else if (superVerbose)
+                        try
+                        {
+                            nodeProcess.Kill();
+                            if (verbose)
+                                WriteLine($"Killed node process id {nodeProcess.Id}");
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLine($"Could not kill node process id {nodeProcess.Id}");
+                            if (verbose)
+                                WriteLine($"Reason: {ex.Message}");
+                            if (superVerbose)
+                                WriteLine($"Stack trace: {ex.StackTrace}");
+                        }
+                    }
+                    else if (superVerbose)
                     {
                         WriteLine($"Node process is not a child of devenv");
                     }
@@ -41,8 +53,10 @@ namespace KillVSNode
         }
 
         private bool stopped = false;
+        private bool verbose;
+        private bool superVerbose;
 
-        private bool IsChildOfDevenv(Process process, bool superVerbose)
+        private bool IsChildOfDevenv(Process process)
         {
             var parentProcess = process;
             do
@@ -64,11 +78,24 @@ namespace KillVSNode
         {
             var processId = process.Id;
             if (processId == 0) return null;
-            var search = new ManagementObjectSearcher("root\\CIMV2", $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {processId}");
-            var processResults = search.Get().GetEnumerator();
-            if (!processResults.MoveNext()) return null;
-            var parentObject = processResults.Current;
-            var parentId = (uint)parentObject["ParentProcessId"];
+            uint parentId;
+            try
+            {
+                var search = new ManagementObjectSearcher("root\\CIMV2", $"SELECT ParentProcessId FROM Win32_Process WHERE ProcessId = {processId}");
+                var processResults = search.Get().GetEnumerator();
+                if (!processResults.MoveNext()) return null;
+                var parentObject = processResults.Current;
+                parentId = (uint)parentObject["ParentProcessId"];
+            }
+            catch (Exception ex)
+            {
+                WriteLine($"Could not get process info for process id {processId}. VS might be running as admin, in this case you might want to run this command as admin.");
+                if (verbose)
+                    WriteLine($"Reason: {ex.Message}");
+                if (superVerbose)
+                    WriteLine($"Stack trace: {ex.StackTrace}");
+                return null;
+            }
             try
             {
                 var parentProcess = Process.GetProcessById((int)parentId);
