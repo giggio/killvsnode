@@ -79,6 +79,5 @@ namespace KillVSNode
                 return null;
             }
         }
-
     }
 }
