@@ -26,10 +26,18 @@ namespace KillVSNode
                     if (IsChildOfDevenv(nodeProcess, superVerbose))
                     {
                         if (superVerbose) WriteLine($"Found node process id {nodeProcess.Id} which is a child of devenv that is going to die");
-                        nodeProcess.Kill();
+                        try
+                        {
+                            nodeProcess.Kill();
+                        }
+                        catch (Exception ex)
+                        {
+                            WriteLine($"Could not kill process id {nodeProcess.Id}. Error details: \n{ex.Message}");
+                        }
                         if (verbose)
                             WriteLine($"Killed node process id {nodeProcess.Id}");
-                    } else if (superVerbose)
+                    }
+                    else if (superVerbose)
                     {
                         WriteLine($"Node process is not a child of devenv");
                     }
